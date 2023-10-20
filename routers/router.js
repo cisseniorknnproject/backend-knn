@@ -100,7 +100,7 @@ router.get('api/products', (req, res) =>{
 })
 
 //recommend
-router.get('/api/recommend', (req, res) => {
+router.get('/api/recommend', auth, (req, res) => {
 
 })
 
