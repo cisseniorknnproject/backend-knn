@@ -15,8 +15,10 @@ router.get('/', (req, res) => {
     })
 })
 
-router.post('/', auth, (req, res) => {
-    res.status(200).json({message:"Welcome to My api"})
+router.post('/', auth, async (req, res) => {
+    //res.status(200).json({message:"Welcome to My api", userid: req.user.user_id})
+    const user = await User.findById(req.user.user_id)
+    res.status(200).json({message:`Welcome! ${user.first_name}`, userinfo: req.user})
 })
 
 //register
@@ -89,6 +91,27 @@ router.post('/api/login', async (req, res) => {
         }
 
         res.status(400).send("Invalid Cerdentials")
+    } catch (error) {
+        console.error(error)
+    }
+})
+
+//user info
+router.post('/api/user', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.user_id)
+        res.status(200).json(user)
+    } catch (error) {
+        console.error(error)
+    }
+})
+
+//update user info
+router.put('/api/user', auth, async (req, res) => {
+    try {
+        const { first_name, last_name, username, email, password } = req.body
+        const user = await User.findByIdAndUpdate(req.user.user_id, { first_name, last_name, username, email, password }, { new: true })
+        res.status(200).json(user)
     } catch (error) {
         console.error(error)
     }
