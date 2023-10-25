@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken')
 const User = require('./../model/user')
 const auth = require('../middleware/auth')
 const Products = require('./../model/product')
+const UserInfo = require('./../model/Information')
+const UserAddress = require('./../model/Address')
 app.use(express.json())
 
 //test
@@ -79,7 +81,7 @@ router.post('/api/login', async (req, res) => {
                 { user_id: user.id, email },
                 process.env.TOKEN_KEY,
                 {
-                    expiresIn: "2h"
+                    expiresIn: "1h"
                 }
             )
 
@@ -96,9 +98,18 @@ router.post('/api/login', async (req, res) => {
 
 //user info
 router.post('/api/user', auth, async (req, res) => {
+
     try {
         const user = await User.findById(req.user.user_id)
-        res.status(200).json(user)
+        if (user) {
+            const info = await UserInfo.find({userId : req.user.user_id}).exec()
+            const [Information] = await info
+            
+            const uaddress = await UserAddress.find({}).exec()
+            res.status(200).json({user, Information, uaddress})
+        }
+        
+        res.status(200).json({})
     } catch (error) {
         console.error(error)
     }
@@ -128,7 +139,7 @@ router.get('/api/products', async (req, res) => {
 //one product
 router.get('/api/product/:productid', async (req, res) => {
     try {
-        const ProductId  = await req.params.productid
+        const ProductId = await req.params.productid
         const product = await Products.find({ _id: ProductId }).exec()
         if (product) {
             return res.status(200).json(product)
@@ -136,7 +147,7 @@ router.get('/api/product/:productid', async (req, res) => {
         return res.status(404).json('unknow')
     } catch (error) {
 
-     }
+    }
 })
 //recommend
 router.get('/api/recommend', auth, (req, res) => {
