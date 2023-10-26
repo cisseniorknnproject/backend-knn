@@ -126,6 +126,11 @@ router.put('/api/user', auth, async (req, res) => {
     }
 })
 
+//search products
+router.post('/api/search', auth, async (req, res) => {
+    
+})
+
 //products
 router.get('/api/products', async (req, res) => {
     try {
@@ -151,7 +156,7 @@ router.get('/api/product/:productid', async (req, res) => {
 })
 //recommend
 router.get('/api/recommend', auth, (req, res) => {
-
+    
 })
 
 
