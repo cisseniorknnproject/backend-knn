@@ -11,6 +11,7 @@ const UserAddress = require('./../model/Address')
 const Cart = require('../model/Cart')
 const mongoose = require('mongoose')
 const cartProduct = require('./../model/cartProduct')
+const Order = require('../model/Order')
 app.use(express.json())
 
 //test
@@ -169,7 +170,6 @@ router.post('/api/newitems', async (req, res) => {
         res.status(404).json({})
     } catch (error) { console.error(error) }
 })
-
 // get cartID from user id
 router.post('/api/cart/', async (req, res) => {
     const body = await req.body
@@ -185,9 +185,11 @@ router.post('/api/cart/', async (req, res) => {
          */
         const productsWithData = []
         async function fetchProductData(productItem) {
+            // console.log("productItem",productItem)
             const productData = await Products.findOne({ _id: productItem.ProductId }).exec();
+            // console.log("productData",productItem)
             const quantity = productItem.quantity
-            return { productItem, productData: {...productData, quantity} };
+            return { productItem, productData , quantity };
         }
 
         // Iterate over the product array with an asynchronous for...of loop
@@ -199,10 +201,6 @@ router.post('/api/cart/', async (req, res) => {
         // console.log("productWithData:", productsWithData);
 
         return res.status(200).json(productsWithData);
-        if (!product) {
-            return res.status(200)
-        }
-        res.status(200).json({ cart, product })
     }
     else {
         res.status(200).json({})
@@ -210,25 +208,40 @@ router.post('/api/cart/', async (req, res) => {
 })
 // Put Update product count in cart 
 router.put('/api/cart/', async (req, res) => {
-    const { uid, productId, quantity, CartId } = await req.body
+    const { uid, productId, newQuantity, CartId } = await req.body
+    // console.log({uid, productId, quantity, CartId})
     const CID = new mongoose.Types.ObjectId(CartId);
     const PID = new mongoose.Types.ObjectId(productId);
-    const newCartProduct = await cartProduct.findOneAndUpdate({ cartId: CID, productId: PID }, { quantity: quantity }, { new: true }).exec()
-
+    const newCartProduct = await cartProduct.findOneAndUpdate({ CartId: CID, ProductId: PID }, { quantity: newQuantity }, { new: true }).exec()
+    console.log({CID, PID, productId, CartId ,newCartProduct});
     return res.status(200).json({ newCartProduct })
+    // return res.status(200).json({  })
 })
 // Delete product count in cart
 router.delete('/api/cart/', async (req, res) => {
-    const { id, userId } = await req.body
-    const cart = await Cart.find({ userId: userId }).exec()
-    const [cartId] = await cart
-
-    const CID = cartId._id
-    const PID = new mongoose.Types.ObjectId(id)
-    const deletedProduct = await cartProduct.findOneAndRemove({ productId: PID, cartId: CID }).exec()
+    const { CartId, productId } = await req.body
+    console.log({ CartId, productId })
+    // const cart = await cartProduct.findOne({ CartId: CartId, ProductId:productId }).exec()
+    const deletedProduct = await cartProduct.findOneAndRemove({ ProductId: productId, CartId: CartId }).exec()
 
     if (deletedProduct) {
-        res.status(200).json({ deletedProduct })
+        console.log("The product deleted ", {deletedProduct})
+        const updateCart = await cartProduct.find({CartId : CartId}).exec()
+
+
+        const productsWithData = []
+        async function fetchProductData(productItem) {
+            const ProductData = await Products.findOne({_id: productItem.ProductId })
+            const quantity = productItem.quantity
+            return {productItem, ProductData, quantity};
+        }
+
+        for (const ProductItem of updateCart) {
+            const result = await fetchProductData(ProductItem)
+            productsWithData.push(result)
+        }
+        console.log("The cart updated ",productsWithData)
+        res.status(200).json(productsWithData)
     } else {
         res.status(200).json({})
     }
@@ -242,6 +255,7 @@ router.get('/api/products', async (req, res) => {
         console.error(error)
     }
 })
+
 //one product
 router.get('/api/product/:productid', async (req, res) => {
     try {
@@ -259,6 +273,38 @@ router.get('/api/product/:productid', async (req, res) => {
 router.get('/api/recommend', auth, (req, res) => {
 
 })
+// checkout
+router.post('/api/checkout', async (req, res) => {
+    const data = await req.body
+    const CartId = await data.CartId
+    const Uid = await data.Uid
+    const order = await data.data
+    const total = await data.total
+        /**
+         * After create order, 
+         * will find product all in CartProduct
+         * And delete product with ProductId and CartId
+         * After delete CartProduct
+         * delete Cart with CartId
+         */ 
+        const createOrder = await Order.create({Uid: Uid, OrderItem: order, total:total})
+        
+        /**
+         * Must forEach order to find CartProduct and use find with CartId and ProductId
+         * after find delete from cartProduct
+         */
+        // const findProduct = async () => {
 
+        // }
+        if (createOrder) {
+            order.forEach( async (v) => {
+                const productInCart = await cartProduct.findOneAndRemove({CartId: CartId, ProductId: v.ProductId})
+            })
+        }
+        
+        // const deleteCartProduct = await cartProduct.findById({CartId: CartId})
+        res.status(200).json(data)
+
+})
 
 module.exports = router
