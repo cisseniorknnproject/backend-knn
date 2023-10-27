@@ -7,7 +7,9 @@ const ProductSchema = new mongoose.Schema({
     description: { type: 'string', default: null },
     image: { type: 'string', default: null },
     stock: { type: 'number', default: null },
-    cartProduct : [{type: mongoose.Schema.Types.ObjectId, ref : 'CartProduct'}]
+    brand: { type: 'string', default: null },
+    modelNumber: { type: 'number', default: null },
+    cartProduct: [{ type: mongoose.Schema.Types.ObjectId, ref: 'CartProduct' }]
 })
 
 module.exports = mongoose.model('Product', ProductSchema)

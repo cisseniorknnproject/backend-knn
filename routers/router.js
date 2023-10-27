@@ -31,7 +31,7 @@ router.post('/', auth, async (req, res) => {
 router.post('/api/register', async (req, res) => {
     try {
         const { first_name, last_name, username, email, password } = req.body
-
+        console.log({ first_name, last_name, username, email, password })
         //check input
         if (!(first_name && last_name && username && email && password)) {
             res.status(400).send({ message: "All input get required" })
@@ -102,14 +102,13 @@ router.post('/api/login', async (req, res) => {
 
 //user info
 router.post('/api/user', auth, async (req, res) => {
-
     try {
         const user = await User.findById(req.user.user_id)
         if (user) {
             const info = await UserInfo.find({ userId: req.user.user_id }).exec()
             const [Information] = await info
 
-            const uaddress = await UserAddress.find({}).exec()
+            const uaddress = await UserAddress.findOne({}).exec()
             res.status(200).json({ user, Information, uaddress })
         }
 
@@ -122,7 +121,7 @@ router.post('/api/user', auth, async (req, res) => {
 //update user info
 router.put('/api/user', auth, async (req, res) => {
     try {
-        const { first_name, last_name, username, email, password } = req.body
+        const { first_name, last_name, username, email, password } = await req.body
         const user = await User.findByIdAndUpdate(req.user.user_id, { first_name, last_name, username, email, password }, { new: true })
         res.status(200).json(user)
     } catch (error) {
@@ -255,6 +254,7 @@ router.delete('/api/cart/', async (req, res) => {
 router.get('/api/products', async (req, res) => {
     try {
         const response = await Products.find({}).exec()
+        console.log(response)
         res.status(200).json(response)
     } catch (error) {
         console.error(error)
