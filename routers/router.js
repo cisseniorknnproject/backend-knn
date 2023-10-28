@@ -175,6 +175,7 @@ router.post('/api/newitems', async (req, res) => {
         res.status(404).json({})
     } catch (error) { console.error(error) }
 })
+
 // get cartID from user id
 router.post('/api/cart/', async (req, res) => {
     const body = await req.body
@@ -211,6 +212,7 @@ router.post('/api/cart/', async (req, res) => {
         res.status(200).json({})
     }
 })
+
 // Put Update product count in cart 
 router.put('/api/cart/', async (req, res) => {
     const { uid, productId, newQuantity, CartId } = await req.body
@@ -222,6 +224,7 @@ router.put('/api/cart/', async (req, res) => {
     return res.status(200).json({ newCartProduct })
     // return res.status(200).json({  })
 })
+
 // Delete product count in cart
 router.delete('/api/cart/', async (req, res) => {
     const { CartId, productId } = await req.body
@@ -251,6 +254,7 @@ router.delete('/api/cart/', async (req, res) => {
         res.status(200).json({})
     }
 })
+
 //products
 router.get('/api/products', async (req, res) => {
     try {
@@ -275,10 +279,12 @@ router.get('/api/product/:productid', async (req, res) => {
 
     }
 })
+
 //recommend
 router.get('/api/recommend', auth, (req, res) => {
     
 })
+
 // checkout
 router.post('/api/checkout', async (req, res) => {
     const data = await req.body
@@ -311,6 +317,15 @@ router.post('/api/checkout', async (req, res) => {
         // const deleteCartProduct = await cartProduct.findById({CartId: CartId})
         res.status(200).json(data)
 
+        //run python file
+        const python = spawn('python', ['pyrecommend/createCollOrderDataset.py'])
+        python.stderr.on('data', data =>{
+            console.error(data)
+        })
+
+        python.on('exit', () => {
+            console.log('run recommended successfully')
+        })
 })
 
 module.exports = router
